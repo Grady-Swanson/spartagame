@@ -1,19 +1,7 @@
 {
-  "builds": [
-    {
-      "src": "build.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/dist/$1"
-    }
-  ],
-  "functions": {
-    "build.py": {
-      "runtime": "python3.9"
-    }
+  "buildCommand": "pip install -r requirements.txt && python build.py",
+  "outputDirectory": "dist",
+  "github": {
+    "silent": true
   }
 }
