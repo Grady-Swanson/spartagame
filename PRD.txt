@@ -1,0 +1,162 @@
+Product Requirements Document (PRD)
+Game Title: [TBD]
+
+==================================================
+Overview
+==================================================
+A short, replayable pixel-art game where the player helps randomly generated townsfolk with absurd problems during the 60 seconds before a darkly comedic disaster destroys the entire town. Each run resets completely. Designed for social media virality (clips/memes).
+
+==================================================
+Objective
+==================================================
+- Viral success on social media (target: X profile with no other posts)
+- Gameplay tailored for short, funny clips
+- Dark humor and absurdist tone
+
+==================================================
+Target Platform
+==================================================
+- PC (Windows, Linux optional)
+- Distribution: itch.io, Steam
+- Default windowed mode (resizable, fullscreen toggle in settings)
+- File size target: <100MB for easy downloads/sharing
+
+==================================================
+Target Audience
+==================================================
+- Players who enjoy absurd, short indie games (e.g., Minit, McPixel, Untitled Goose Game)
+- Viral clip viewers/sharers
+- Speedrunners and meme enthusiasts
+
+==================================================
+Tone & Style
+==================================================
+- Dark humor, absurd, intentionally meaningless
+- Humor from NPC problems + disaster timing
+- Replay loop prioritizes chaos and surprise
+
+==================================================
+Core Loop
+==================================================
+1. Player spawns in procedurally generated town
+2. NPCs (randomly generated) present absurd problems
+3. Player interacts via dialogue choices
+4. At exactly 60 seconds, a random disaster occurs
+5. Everything resets: new town, new NPCs, new problems, new disaster
+
+==================================================
+Game Structure
+==================================================
+- Runs last exactly 60 seconds
+- Timer always visible at top of screen (MM:SS format, countdown)
+- No progress carries between runs
+- No relationship tracking or payoff
+- Restart flow: instant reset to new run (no menus unless player quits)
+
+==================================================
+NPC System
+==================================================
+- NPCs randomly generated each run
+- Components:
+  - Randomized names (simple, absurd, or normal)
+  - Pixel art sprites (color variations, randomized outfits)
+  - Assigned one problem from curated problem list
+- Population per run: 8–12 NPCs (scattered in town)
+
+==================================================
+Disasters
+==================================================
+At exactly 0 seconds, one disaster is chosen randomly:
+1. A massive cat crushes the city
+2. A massive tomato falls on the city
+3. A shark emerges from the water and eats the city
+4. The city suddenly explodes
+
+Each disaster has:
+- Unique pixel animation (oversized, fast, absurd)
+- Accompanying sound effect (crash, squish, roar, boom)
+
+==================================================
+Art Direction
+==================================================
+- Pixel art (retro-inspired but clean)
+- Tile size: 32x32
+- Resolution target: 640x360 (scales cleanly x2/x3)
+- Palette: 32–64 colors (bright, meme-friendly)
+- NPCs: 4-frame walk cycle, 1 idle frame, 2 talk frames
+- Disasters: 3–5 frame animations
+
+==================================================
+Town Layout
+==================================================
+- Procedurally generated each run
+- Components:
+  - 10–15 buildings (non-interactive, decorative)
+  - Randomized dirt paths/roads
+  - NPCs scattered in walkable areas
+- Grid-based placement for simplicity
+- Interaction limited to NPCs
+
+==================================================
+Gameplay Features
+==================================================
+- Interact: Space or Enter
+- Timer displayed top center
+- Dialogue presented in text box (2–3 choices per problem)
+- Instant reset after disaster
+
+==================================================
+Technical Requirements
+==================================================
+- Language: C++
+- Single-player only
+- Lightweight runtime (<100MB build)
+- Pixel-perfect camera scaling
+
+==================================================
+UI/UX
+==================================================
+- Timer at top of screen
+- Minimal HUD (timer only)
+- Interaction indicator: small “!” icon above NPCs
+- Dialogue box bottom of screen, pixel font
+- Instant restart button (R key)
+
+==================================================
+Audio
+==================================================
+- Retro-style sound effects (8-bit inspired)
+- Short looping background track (upbeat, absurd)
+- Each disaster has unique sound effect:
+  - Cat: deep meow + crash
+  - Tomato: splat
+  - Shark: chomp
+  - Explosion: boom + rumble
+
+==================================================
+Marketing & Virality
+==================================================
+- Gameplay optimized for funny 30–60 second clips
+- Disasters designed to look absurd in GIF format
+- NPC problems built for meme screenshots
+- Distribution strategy:
+  - Release free/cheap on itch.io
+  - Push to X/TikTok via short gameplay clips
+  - Encourage “one-more-run” replay culture
+
+==================================================
+Success Metrics
+==================================================
+- Number of clips/memes shared on social platforms
+- Viral reach (likes, retweets, TikTok stitches)
+- Downloads/installs (low price/free helps viral adoption)
+
+==================================================
+Next Steps
+==================================================
+1. Expand NPC problem pool (target: 50 problems)
+2. Define sprite sheet assets (NPCs, disasters, tiles)
+3. Implement town generator (grid-based, randomized)
+4. Code disaster system (timer trigger, random selection)
+5. Playtest for pacing + humor flow
+6. Package small demo for viral testing
