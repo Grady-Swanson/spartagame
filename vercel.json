@@ -1,7 +1,6 @@
 {
-  "buildCommand": "pip install -r requirements.txt && python build.py",
+  "buildCommand": "python3 -m pip install -r requirements.txt && python3 build.py",
   "outputDirectory": "dist",
-  "github": {
-    "silent": true
-  }
+  "installCommand": "python3 -m pip install --upgrade pip",
+  "framework": null
 }
