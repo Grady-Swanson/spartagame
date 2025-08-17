@@ -17,7 +17,7 @@ def build_web():
         print("✅ pygbag found")
     except ImportError:
         print("❌ pygbag not found. Installing...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "pygbag==0.8.7"], check=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "pygbag==0.8.6"], check=True)
         print("✅ pygbag installed")
     
     # Create dist directory
