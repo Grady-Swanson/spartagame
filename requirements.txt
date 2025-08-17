@@ -1,2 +1,1 @@
-pygame==2.5.2
-pygbag==0.8.6
+# No Python dependencies needed for static build
