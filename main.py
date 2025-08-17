@@ -118,6 +118,84 @@ except pygame.error as e:
     print(f"❌ Error loading Blacksmith_Help_Request_1.png: {e}")
     blacksmith_help_img = None
 
+# Load farmer help request speech bubble
+try:
+    farmer_help_img = pygame.image.load("Assets/Buildings/Speech/Farmer_Help_Request.png").convert_alpha()
+    # Scale to 64x64 pixels for consistency
+    farmer_help_img = pygame.transform.scale(farmer_help_img, (64, 64))
+    print(f"✅ Loaded farmer help request image - Size: {farmer_help_img.get_size()}")
+except pygame.error as e:
+    print(f"❌ Error loading Farmer_Help_Request.png: {e}")
+    farmer_help_img = None
+
+# Load help and ignore buttons
+try:
+    help_button_img = pygame.image.load("Assets/Buildings/Buttons/Help_Button.png").convert_alpha()
+    original_help_size = help_button_img.get_size()
+    # Keep original size, will scale when drawing
+    print(f"✅ Loaded help button - Original: {original_help_size}")
+    print(f"📊 Help button format: {help_button_img.get_flags()}, alpha: {help_button_img.get_alpha()}")
+except pygame.error as e:
+    print(f"❌ Error loading Help_Button.png: {e}")
+    help_button_img = None
+except FileNotFoundError as e:
+    print(f"❌ Help_Button.png file not found: {e}")
+    help_button_img = None
+
+try:
+    ignore_button_img = pygame.image.load("Assets/Buildings/Buttons/Ignore_Button.png").convert_alpha()
+    original_ignore_size = ignore_button_img.get_size()
+    # Keep original size, will scale when drawing
+    print(f"✅ Loaded ignore button - Original: {original_ignore_size}")
+    print(f"📊 Ignore button format: {ignore_button_img.get_flags()}, alpha: {ignore_button_img.get_alpha()}")
+except pygame.error as e:
+    print(f"❌ Error loading Ignore_Button.png: {e}")
+    ignore_button_img = None
+except FileNotFoundError as e:
+    print(f"❌ Ignore_Button.png file not found: {e}")
+    ignore_button_img = None
+
+# Create fallback buttons if PNG files aren't readable
+if help_button_img is None:
+    print("🔧 Creating fallback help button")
+    help_button_img = pygame.Surface((32, 32), pygame.SRCALPHA)
+    help_button_img.fill((0, 255, 0, 255))  # Green background
+    # Add "HELP" text
+    font_small = pygame.font.Font(None, 16)
+    text = font_small.render("HELP", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(16, 16))
+    help_button_img.blit(text, text_rect)
+
+if ignore_button_img is None:
+    print("🔧 Creating fallback ignore button")
+    ignore_button_img = pygame.Surface((32, 32), pygame.SRCALPHA)
+    ignore_button_img.fill((255, 0, 0, 255))  # Red background
+    # Add "IGNORE" text
+    font_small = pygame.font.Font(None, 12)
+    text = font_small.render("IGNORE", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(16, 16))
+    ignore_button_img.blit(text, text_rect)
+
+# Load blacksmith hammer sprite
+blacksmith_hammer_img = None
+try:
+    # Try to load from villagers folder first
+    blacksmith_hammer_img = pygame.image.load("Assets/Buildings/Villagers/Blacksmith_Hammer.png").convert_alpha()
+    blacksmith_hammer_img = pygame.transform.scale(blacksmith_hammer_img, (32, 32))  # Scale to 32x32
+    print(f"✅ Loaded blacksmith hammer - Size: {blacksmith_hammer_img.get_size()}")
+except:
+    try:
+        # Try main assets folder
+        blacksmith_hammer_img = pygame.image.load("Assets/Blacksmith_Hammer.png").convert_alpha()
+        blacksmith_hammer_img = pygame.transform.scale(blacksmith_hammer_img, (32, 32))
+        print(f"✅ Loaded blacksmith hammer from Assets - Size: {blacksmith_hammer_img.get_size()}")
+    except:
+        print(f"❌ Could not find Blacksmith_Hammer.png, creating fallback")
+        # Create fallback hammer
+        blacksmith_hammer_img = pygame.Surface((32, 32), pygame.SRCALPHA)
+        pygame.draw.rect(blacksmith_hammer_img, (139, 69, 19), (8, 0, 16, 20))  # Brown handle
+        pygame.draw.rect(blacksmith_hammer_img, (128, 128, 128), (4, 20, 24, 12))  # Gray hammer head
+
 class Button:
     """Simple button class for the menu"""
     def __init__(self, x, y, width, height, text, font, color=BLUE, hover_color=DARK_BLUE, text_color=WHITE):
@@ -458,6 +536,7 @@ class Villager:
         self.image = villager_images.get(sprite_name)
         self.show_exclamation = False
         self.show_speech_image = False  # For showing speech bubbles like help requests
+        self.is_scaled_up = False  # For scaling villager and help request when clicked
         self.exclamation_timer = 0
         self.movement_timer = 0
         self.movement_interval = random.uniform(2.0, 4.0)  # Random movement every 2-4 seconds
@@ -515,40 +594,139 @@ class Villager:
         self.show_exclamation = False
     
     def show_help_request(self):
-        """Show the help request speech bubble (for blacksmith)"""
+        """Show the help request speech bubble (for blacksmith) and scale up"""
         print(f"💬 Showing help request for {self.sprite_name}")
         self.show_speech_image = True
         self.show_exclamation = False  # Hide exclamation when showing speech
-        print(f"📊 Speech state: {self.show_speech_image}, Exclamation state: {self.show_exclamation}")
+        self.is_scaled_up = True  # Scale up villager and help request
+        print(f"📊 Speech state: {self.show_speech_image}, Exclamation state: {self.show_exclamation}, Scaled: {self.is_scaled_up}")
+        print("🧊 FREEZING GAME - Only timer will continue")
     
     def hide_speech_image(self):
-        """Hide the speech image"""
+        """Hide the speech image and reset scaling"""
         self.show_speech_image = False
+        self.is_scaled_up = False
+        print("🔓 UNFREEZING GAME - Resuming normal gameplay")
     
     def draw(self, surface):
         """Draw the villager and optional exclamation or speech image"""
-        # Draw villager sprite
+        # Draw villager sprite (scaled up if is_scaled_up is True)
         if self.image:
-            surface.blit(self.image, (int(self.x), int(self.y)))
+            if self.is_scaled_up:
+                # Scale up villager to 32x32 (from 15x15)
+                scaled_villager = pygame.transform.scale(self.image, (32, 32))
+                # Adjust position to keep centered (offset by half the size difference)
+                villager_x = int(self.x - 8.5)  # Move left by (32-15)/2 = 8.5
+                villager_y = int(self.y - 8.5)  # Move up by (32-15)/2 = 8.5
+                surface.blit(scaled_villager, (villager_x, villager_y))
+            else:
+                surface.blit(self.image, (int(self.x), int(self.y)))
         else:
-            # Fallback: draw a small colored circle
-            pygame.draw.circle(surface, WHITE, (int(self.x + 7.5), int(self.y + 7.5)), 4)
+            # Fallback: draw a small colored circle (scaled if needed)
+            if self.is_scaled_up:
+                pygame.draw.circle(surface, WHITE, (int(self.x + 7.5), int(self.y + 7.5)), 8)  # Double radius for 32x32
+            else:
+                pygame.draw.circle(surface, WHITE, (int(self.x + 7.5), int(self.y + 7.5)), 4)
         
         # Draw speech image if active (takes priority over exclamation)
-        if self.show_speech_image and blacksmith_help_img:
-            # Position speech bubble above villager
-            speech_x = int(self.x - blacksmith_help_img.get_width() // 2 + 7 - 20 + 32 + 12)  # Center above villager, moved 20px left, then 32px right, then 12px more right
-            speech_y = int(self.y - blacksmith_help_img.get_height() - 5 + 10)  # Above villager with gap, moved 10px down
-            print(f"🗨️ Drawing speech image for {self.sprite_name} at ({speech_x}, {speech_y})")
-            surface.blit(blacksmith_help_img, (speech_x, speech_y))
-        elif self.show_speech_image:
-            print(f"❌ Speech image requested but blacksmith_help_img is None for {self.sprite_name}")
+        if self.show_speech_image:
+            # Choose appropriate speech image based on villager type
+            speech_img = None
+            if self.sprite_name == "Blacksmith.png" and blacksmith_help_img:
+                speech_img = blacksmith_help_img
+            elif (self.sprite_name == "Farmer_Female.png" or self.sprite_name == "Farmer_Male.png") and farmer_help_img:
+                speech_img = farmer_help_img
+            
+            if speech_img:
+                if self.is_scaled_up:
+                    # Scale up help request to 128x128 (from 64x64)
+                    scaled_help_img = pygame.transform.scale(speech_img, (128, 128))
+                    # Position scaled speech bubble above scaled villager
+                    speech_x = int(self.x - scaled_help_img.get_width() // 2 + 7 - 20 + 32 + 12 + 30)  # Added +30 to move right
+                    speech_y = int(self.y - scaled_help_img.get_height() - 5 + 10 + 15)  # Added +15 to move down
+                    print(f"🗨️ Drawing SCALED speech image for {self.sprite_name} at ({speech_x}, {speech_y})")
+                    surface.blit(scaled_help_img, (speech_x, speech_y))
+                    
+                    # Draw buttons to the right of the speech bubble (scaled)
+                    if help_button_img and ignore_button_img:
+                        scaled_help_btn = pygame.transform.scale(help_button_img, (64, 64))  # Half size: was 128x128, now 64x64
+                        scaled_ignore_btn = pygame.transform.scale(ignore_button_img, (64, 64))
+                        
+                        # Position buttons to the right of speech bubble
+                        button_x = speech_x + scaled_help_img.get_width() + 16 - 30  # Speech bubble width + 16px gap - 30px left
+                        help_button_y = speech_y + 10  # Top button
+                        ignore_button_y = speech_y + 144 - 125 + 25  # Move up by 125 pixels + 25px down
+                        
+                        surface.blit(scaled_help_btn, (button_x, help_button_y))
+                        surface.blit(scaled_ignore_btn, (button_x, ignore_button_y))
+                        print(f"🔘 Drawing SCALED buttons (64x64) to RIGHT at ({button_x}, {help_button_y}) and ({button_x}, {ignore_button_y})")
+                        
+                        # Store button positions for click detection (accessed through villager_manager)
+                        if hasattr(self, 'manager') and self.manager:
+                            self.manager.help_button_rect = pygame.Rect(button_x, help_button_y, 64, 64)
+                            self.manager.ignore_button_rect = pygame.Rect(button_x, ignore_button_y, 64, 64)
+                else:
+                    # Normal size speech bubble
+                    speech_x = int(self.x - speech_img.get_width() // 2 + 7 - 20 + 32 + 12 + 30)  # Added +30 to move right
+                    speech_y = int(self.y - speech_img.get_height() - 5 + 10 + 15)  # Added +15 to move down
+                    print(f"🗨️ Drawing speech image for {self.sprite_name} at ({speech_x}, {speech_y})")
+                    surface.blit(speech_img, (speech_x, speech_y))
+                    
+                    # Draw buttons to the right of the speech bubble (normal size)
+                    if help_button_img and ignore_button_img:
+                        # Scale buttons to half size
+                        small_help_btn = pygame.transform.scale(help_button_img, (32, 32))  # Half size: was 64x64, now 32x32
+                        small_ignore_btn = pygame.transform.scale(ignore_button_img, (32, 32))
+                        
+                        # Position buttons to the right of speech bubble
+                        button_x = speech_x + speech_img.get_width() + 8 - 30  # Speech bubble width + 8px gap - 30px left
+                        help_button_y = speech_y - 5   # Top button (aligned with top of speech bubble)
+                        ignore_button_y = speech_y + 70 - 125 + 25  # Move up by 125 pixels + 25px down
+                        
+                        surface.blit(small_help_btn, (button_x, help_button_y))
+                        surface.blit(small_ignore_btn, (button_x, ignore_button_y))
+                        print(f"🔘 Drawing buttons (32x32) to RIGHT at ({button_x}, {help_button_y}) and ({button_x}, {ignore_button_y})")
+                        
+                        # Store button positions for click detection (accessed through villager_manager)
+                        if hasattr(self, 'manager') and self.manager:
+                            self.manager.help_button_rect = pygame.Rect(button_x, help_button_y, 32, 32)
+                            self.manager.ignore_button_rect = pygame.Rect(button_x, ignore_button_y, 32, 32)
+            elif self.show_speech_image:
+                print(f"❌ Speech image requested but no appropriate image found for {self.sprite_name}")
         # Draw exclamation if active and no speech image is showing
         elif self.show_exclamation and exclamation_img:
-            # Position exclamation above villager
-            exclamation_x = int(self.x - 0.5)  # Center above 15px wide villager
-            exclamation_y = int(self.y - 18)  # Above villager
-            surface.blit(exclamation_img, (exclamation_x, exclamation_y))
+            # Position exclamation above villager (scaled or normal)
+            if self.is_scaled_up:
+                scaled_exclamation = pygame.transform.scale(exclamation_img, (32, 32))  # Double size for scaled villager
+                exclamation_x = int(self.x - 8)  # Center above 32px wide villager
+                exclamation_y = int(self.y - 40)  # Higher above scaled villager
+                surface.blit(scaled_exclamation, (exclamation_x, exclamation_y))
+            else:
+                exclamation_x = int(self.x - 0.5)  # Center above 15px wide villager
+                exclamation_y = int(self.y - 18)  # Above villager
+                surface.blit(exclamation_img, (exclamation_x, exclamation_y))
+
+class HammerItem:
+    """Represents a collectible hammer on the island"""
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.collected = False
+        
+    def is_clicked(self, mouse_x, mouse_y):
+        """Check if the hammer was clicked"""
+        hammer_rect = pygame.Rect(self.x, self.y, 32, 32)
+        return hammer_rect.collidepoint(mouse_x, mouse_y)
+    
+    def collect(self):
+        """Collect the hammer"""
+        self.collected = True
+        print("🔨 Hammer collected!")
+    
+    def draw(self, surface):
+        """Draw the hammer if not collected"""
+        if not self.collected and blacksmith_hammer_img:
+            surface.blit(blacksmith_hammer_img, (int(self.x), int(self.y)))
 
 class VillagerManager:
     """Manages all villagers and their behaviors"""
@@ -557,6 +735,10 @@ class VillagerManager:
         self.exclamation_timer = 0
         self.exclamation_interval = 5.0  # Check every 5 seconds
         self.exclamation_chance = 0.20  # 20% chance
+        self.is_frozen = False  # Freeze state for blacksmith interactions
+        self.hammer = None  # Current hammer on the island
+        self.help_button_rect = None  # Track help button position
+        self.ignore_button_rect = None  # Track ignore button position
         
     def spawn_villagers(self):
         """Spawn 7 villagers with unique sprites at random positions"""
@@ -573,6 +755,7 @@ class VillagerManager:
             y = random.uniform(70, 280)
             
             villager = Villager(sprite_name, x, y)
+            villager.manager = self  # Give villager reference to manager for button tracking
             self.villagers.append(villager)
             print(f"👥 Spawned villager {sprite_name} at ({x:.1f}, {y:.1f})")
         
@@ -588,6 +771,11 @@ class VillagerManager:
     
     def update(self, dt):
         """Update all villagers and handle exclamation events"""
+        # Check if game is frozen (blacksmith interaction active)
+        if self.is_frozen:
+            print("🧊 Game frozen - skipping villager updates")
+            return
+            
         # Update all villagers
         for villager in self.villagers:
             villager.update(dt)
@@ -611,22 +799,84 @@ class VillagerManager:
                         break
     
     def draw(self, surface):
-        """Draw all villagers"""
+        """Draw all villagers and hammer"""
         for villager in self.villagers:
             villager.draw(surface)
+        
+        # Draw hammer if it exists
+        if self.hammer and not self.hammer.collected:
+            self.hammer.draw(surface)
     
     def handle_click(self, mouse_x, mouse_y):
         """Handle click on villagers - show speech for blacksmith or remove exclamation for others"""
         print(f"🖱️ Click at ({mouse_x}, {mouse_y})")
+        
+        # If game is frozen, check for button clicks or dismiss
+        if self.is_frozen:
+            # Check if help button was clicked
+            if self.help_button_rect and self.help_button_rect.collidepoint(mouse_x, mouse_y):
+                print("✅ Help button clicked!")
+                # Spawn hammer at random location
+                hammer_x = random.uniform(170, 420)
+                hammer_y = random.uniform(70, 280)
+                self.hammer = HammerItem(hammer_x, hammer_y)
+                print(f"🔨 Hammer spawned at ({hammer_x:.1f}, {hammer_y:.1f})")
+                
+                # Dismiss dialogue
+                for villager in self.villagers:
+                    if villager.show_speech_image:
+                        villager.hide_speech_image()
+                        break
+                self.is_frozen = False
+                self.help_button_rect = None
+                self.ignore_button_rect = None
+                return True
+            
+            # Check if ignore button was clicked
+            if self.ignore_button_rect and self.ignore_button_rect.collidepoint(mouse_x, mouse_y):
+                print("❌ Ignore button clicked!")
+                # Just dismiss dialogue
+                for villager in self.villagers:
+                    if villager.show_speech_image:
+                        villager.hide_speech_image()
+                        break
+                self.is_frozen = False
+                self.help_button_rect = None
+                self.ignore_button_rect = None
+                return True
+            
+            # Otherwise, dismiss on any click
+            for villager in self.villagers:
+                if villager.show_speech_image:
+                    villager.hide_speech_image()
+                    self.is_frozen = False
+                    self.help_button_rect = None
+                    self.ignore_button_rect = None
+                    print("🔓 Dismissed blacksmith dialogue - game unfrozen!")
+                    return True
+            return False
+        
+        # Check if hammer was clicked
+        if self.hammer and not self.hammer.collected and self.hammer.is_clicked(mouse_x, mouse_y):
+            self.hammer.collect()
+            return True
+        
         for villager in self.villagers:
             print(f"🔍 Checking villager {villager.sprite_name} at ({villager.x:.1f}, {villager.y:.1f}) - exclamation: {villager.show_exclamation}")
             if villager.show_exclamation and villager.is_clicked(mouse_x, mouse_y):
-                # Special handling for blacksmith: show help request image
+                # Special handling for blacksmith and farmers: show help request image
                 print(f"✅ Hit villager: {villager.sprite_name}")
                 if villager.sprite_name == "Blacksmith.png":
                     villager.show_help_request()
+                    self.is_frozen = True  # Freeze the game
                     print(f"👆 Clicked on {villager.sprite_name} - showing help request!")
                     print(f"🖼️ Help image loaded: {blacksmith_help_img is not None}")
+                    print(f"📊 Speech state: {villager.show_speech_image}, Exclamation state: {villager.show_exclamation}")
+                elif villager.sprite_name == "Farmer_Female.png" or villager.sprite_name == "Farmer_Male.png":
+                    villager.show_help_request()
+                    self.is_frozen = True  # Freeze the game
+                    print(f"👆 Clicked on {villager.sprite_name} - showing farmer help request!")
+                    print(f"🖼️ Farmer help image loaded: {farmer_help_img is not None}")
                     print(f"📊 Speech state: {villager.show_speech_image}, Exclamation state: {villager.show_exclamation}")
                 else:
                     villager.remove_exclamation()
@@ -675,7 +925,8 @@ class VillagerManager:
         print("🐛 DEBUG: All villagers:")
         for i, villager in enumerate(self.villagers):
             status = "❗" if villager.show_exclamation else "💬" if villager.show_speech_image else "😐"
-            print(f"  [{i}] {villager.sprite_name} {status} at ({villager.x:.1f}, {villager.y:.1f})")
+            scale = "🔍" if villager.is_scaled_up else ""
+            print(f"  [{i}] {villager.sprite_name} {status}{scale} at ({villager.x:.1f}, {villager.y:.1f})")
         return len(self.villagers)
 
 async def main():
@@ -926,7 +1177,7 @@ async def main():
             elapsed_time = (current_time - start_time) / 1000.0  # Convert to seconds
             time_remaining = max(0, GAME_DURATION - elapsed_time)
             
-            # Update villagers
+            # Update villagers (will be skipped if frozen)
             dt = (current_time - previous_time) / 1000.0  # Delta time in seconds
             villager_manager.update(dt)
             previous_time = current_time
