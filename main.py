@@ -3,6 +3,7 @@ import sys
 import os
 import random
 import math
+import asyncio
 from enum import Enum
 
 # Initialize Pygame
@@ -110,7 +111,9 @@ except pygame.error as e:
 # Load blacksmith help request speech bubble
 try:
     blacksmith_help_img = pygame.image.load("Assets/Buildings/Speech/Blacksmith_Help_Request_1.png").convert_alpha()
-    print("✅ Loaded blacksmith help request image")
+    # Scale to 64x64 pixels for better positioning
+    blacksmith_help_img = pygame.transform.scale(blacksmith_help_img, (64, 64))
+    print(f"✅ Loaded blacksmith help request image - Size: {blacksmith_help_img.get_size()}")
 except pygame.error as e:
     print(f"❌ Error loading Blacksmith_Help_Request_1.png: {e}")
     blacksmith_help_img = None
@@ -513,8 +516,10 @@ class Villager:
     
     def show_help_request(self):
         """Show the help request speech bubble (for blacksmith)"""
+        print(f"💬 Showing help request for {self.sprite_name}")
         self.show_speech_image = True
         self.show_exclamation = False  # Hide exclamation when showing speech
+        print(f"📊 Speech state: {self.show_speech_image}, Exclamation state: {self.show_exclamation}")
     
     def hide_speech_image(self):
         """Hide the speech image"""
@@ -532,9 +537,12 @@ class Villager:
         # Draw speech image if active (takes priority over exclamation)
         if self.show_speech_image and blacksmith_help_img:
             # Position speech bubble above villager
-            speech_x = int(self.x - blacksmith_help_img.get_width() // 2 + 7)  # Center above villager
-            speech_y = int(self.y - blacksmith_help_img.get_height() - 5)  # Above villager with gap
+            speech_x = int(self.x - blacksmith_help_img.get_width() // 2 + 7 - 20 + 32 + 12)  # Center above villager, moved 20px left, then 32px right, then 12px more right
+            speech_y = int(self.y - blacksmith_help_img.get_height() - 5 + 10)  # Above villager with gap, moved 10px down
+            print(f"🗨️ Drawing speech image for {self.sprite_name} at ({speech_x}, {speech_y})")
             surface.blit(blacksmith_help_img, (speech_x, speech_y))
+        elif self.show_speech_image:
+            print(f"❌ Speech image requested but blacksmith_help_img is None for {self.sprite_name}")
         # Draw exclamation if active and no speech image is showing
         elif self.show_exclamation and exclamation_img:
             # Position exclamation above villager
@@ -609,16 +617,22 @@ class VillagerManager:
     
     def handle_click(self, mouse_x, mouse_y):
         """Handle click on villagers - show speech for blacksmith or remove exclamation for others"""
+        print(f"🖱️ Click at ({mouse_x}, {mouse_y})")
         for villager in self.villagers:
+            print(f"🔍 Checking villager {villager.sprite_name} at ({villager.x:.1f}, {villager.y:.1f}) - exclamation: {villager.show_exclamation}")
             if villager.show_exclamation and villager.is_clicked(mouse_x, mouse_y):
                 # Special handling for blacksmith: show help request image
+                print(f"✅ Hit villager: {villager.sprite_name}")
                 if villager.sprite_name == "Blacksmith.png":
                     villager.show_help_request()
                     print(f"👆 Clicked on {villager.sprite_name} - showing help request!")
+                    print(f"🖼️ Help image loaded: {blacksmith_help_img is not None}")
+                    print(f"📊 Speech state: {villager.show_speech_image}, Exclamation state: {villager.show_exclamation}")
                 else:
                     villager.remove_exclamation()
                     print(f"👆 Clicked on {villager.sprite_name} - exclamation removed!")
                 return True  # Return True if we handled a click
+        print("❌ No villager with exclamation was clicked")
         return False  # Return False if no villager with exclamation was clicked
     
     def force_random_exclamation(self):
@@ -636,8 +650,35 @@ class VillagerManager:
             print(f"🐛 DEBUG: Forced exclamation on {random_villager.sprite_name}")
             return random_villager.sprite_name
         return None
+    
+    def force_specific_villager_exclamation(self, villager_index):
+        """Debug function: Force a specific villager (by index) to show exclamation"""
+        if 0 <= villager_index < len(self.villagers):
+            villager = self.villagers[villager_index]
+            # Remove exclamation from all villagers first if we're at max
+            current_exclamations = self.get_active_exclamation_count()
+            if current_exclamations >= 2:
+                for v in self.villagers:
+                    v.show_exclamation = False
+                    v.show_speech_image = False
+                print("🐛 DEBUG: Cleared all exclamations to make room")
+            
+            villager.trigger_exclamation()
+            print(f"🐛 DEBUG: Forced exclamation on villager {villager_index}: {villager.sprite_name}")
+            return villager.sprite_name
+        else:
+            print(f"🐛 DEBUG: Invalid villager index {villager_index}. Available: 0-{len(self.villagers)-1}")
+            return None
+    
+    def list_all_villagers(self):
+        """Debug function: List all villagers with their indices"""
+        print("🐛 DEBUG: All villagers:")
+        for i, villager in enumerate(self.villagers):
+            status = "❗" if villager.show_exclamation else "💬" if villager.show_speech_image else "😐"
+            print(f"  [{i}] {villager.sprite_name} {status} at ({villager.x:.1f}, {villager.y:.1f})")
+        return len(self.villagers)
 
-def main():
+async def main():
     clock = pygame.time.Clock()
     running = True
     
@@ -798,6 +839,30 @@ def main():
                         forced_villager = villager_manager.force_random_exclamation()
                         if forced_villager:
                             print(f"🐛 DEBUG: Forced exclamation on {forced_villager}")
+                    elif event.key == pygame.K_l and debug_mode:
+                        # List all villagers (debug)
+                        villager_manager.list_all_villagers()
+                    elif event.key == pygame.K_0 and debug_mode:
+                        # Force exclamation on villager 0 (debug)
+                        villager_manager.force_specific_villager_exclamation(0)
+                    elif event.key == pygame.K_1 and debug_mode:
+                        # Force exclamation on villager 1 (debug)
+                        villager_manager.force_specific_villager_exclamation(1)
+                    elif event.key == pygame.K_2 and debug_mode:
+                        # Force exclamation on villager 2 (debug)
+                        villager_manager.force_specific_villager_exclamation(2)
+                    elif event.key == pygame.K_3 and debug_mode:
+                        # Force exclamation on villager 3 (debug)
+                        villager_manager.force_specific_villager_exclamation(3)
+                    elif event.key == pygame.K_4 and debug_mode:
+                        # Force exclamation on villager 4 (debug)
+                        villager_manager.force_specific_villager_exclamation(4)
+                    elif event.key == pygame.K_5 and debug_mode:
+                        # Force exclamation on villager 5 (debug)
+                        villager_manager.force_specific_villager_exclamation(5)
+                    elif event.key == pygame.K_6 and debug_mode:
+                        # Force exclamation on villager 6 (debug)
+                        villager_manager.force_specific_villager_exclamation(6)
                             
             elif current_state == GameState.END:
                 # Handle end screen events
@@ -905,9 +970,11 @@ def main():
         
         # Cap the framerate
         clock.tick(60)
+        
+        # Required for pygbag
+        await asyncio.sleep(0)
 
     pygame.quit()
-    sys.exit()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
