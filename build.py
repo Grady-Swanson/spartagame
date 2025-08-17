@@ -11,6 +11,15 @@ def build_web():
     """Build the game for web deployment using pygbag"""
     print("🎮 Building Catastrophe Civ for web...")
     
+    # Check if pygbag is installed
+    try:
+        import pygbag
+        print("✅ pygbag found")
+    except ImportError:
+        print("❌ pygbag not found. Installing...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "pygbag==0.8.7"], check=True)
+        print("✅ pygbag installed")
+    
     # Create dist directory
     os.makedirs("dist", exist_ok=True)
     
